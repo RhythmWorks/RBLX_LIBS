@@ -1,12 +1,29 @@
 local Rhythm_Library = {}
 
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local CoreGui = game:GetService("CoreGui")
+for _, obj in pairs(game:GetService("CoreGui"):GetChildren()) do
+    if obj:GetAttribute("Rhythm_Lib") then
+        obj:Destroy()
+    end
+end
 
+loadstring(game:HttpGet("https://api.irisapp.ca/Scripts/IrisInstanceProtect.lua"))()
+
+getgenv().Rhythm_Library = {
+    Toggled = true,
+    Keybind = Enum.KeyCode.RightControl
+}
+
+local Collection = game:GetService("CollectionService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local UIS = game:GetService("UserInputService")
+
+local Player = Players.LocalPlayer
+local _toggling = false
 local assertions = {
-    [1] = "Invalid type for property \"name\"",
-    [2] = "Missing argument"
+    "Invalid type for property \"name\"",
+    "Missing argument",
+    "Tried to duplicate tab name"
 }
 
 local function dragify(Frame)
@@ -73,7 +90,26 @@ local function updateCanvas(scrollingFrame, layout, scrollingDirection, padding,
 	end
 end
 
-function Rhythm_Library:CreateWindow(windowOptions)
+local function generateId(length)
+    length = length or 12
+
+    local types = {
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "0123456789"
+    }
+
+    local id = ""
+
+    for i = 1, length do
+        local using = types[math.random(#types)]
+        local rand = math.random(#using)
+        id = id .. using:sub(rand, rand)
+    end
+
+    return id
+end
+
+function Rhythm_Library:Window(windowOptions)
     local windowName = windowOptions.name or windowOptions.Name or windowOptions[1] or windowOptions or "RHYTHMLIB"
     assert(typeof(windowName) == "string", string.format("%s %s", assertions[1] .. "; user tried to set name to:", windowName))
 
@@ -90,16 +126,15 @@ function Rhythm_Library:CreateWindow(windowOptions)
     local Scrolling_Tabs = Instance.new("ScrollingFrame")
     local ListLayout_Tabs = Instance.new("UIListLayout")
     local Stroke_Tabs = Instance.new("UIStroke")
-    local Container_Windows = Instance.new("Frame")
-    local Container_WindowsScrolling = Instance.new("Frame")
-    local Scrolling_Windows = Instance.new("ScrollingFrame")
-    local GridLayout_Windows = Instance.new("UIGridLayout")
+    local Container_TabView = Instance.new("Frame")
     local Stroke_Main = Instance.new("UIStroke")
 
-    Rhythm_Lib.Name = "Rhythm_Lib"
+    Rhythm_Lib.Name = generateId(16)
     Rhythm_Lib.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    Rhythm_Lib:SetAttribute("Rhythm_Lib", true)
+    ProtectInstance(Rhythm_Lib)
     Rhythm_Lib.Parent = CoreGui
-
+    
     Container_Drag.Name = "Container_Drag"
     Container_Drag.AnchorPoint = Vector2.new(0.5, 0.5)
     Container_Drag.BackgroundColor3 = Color3.new(1, 1, 1)
@@ -229,67 +264,34 @@ function Rhythm_Library:CreateWindow(windowOptions)
     Stroke_Tabs.LineJoinMode = Enum.LineJoinMode.Miter
     Stroke_Tabs.Parent = Container_Tabs
 
-    Container_Windows.Name = "Container_Windows"
-    Container_Windows.AnchorPoint = Vector2.new(0.5, 0.5)
-    Container_Windows.BackgroundColor3 = Color3.new(0, 0, 0)
-    Container_Windows.BackgroundTransparency = 1
-    Container_Windows.BorderSizePixel = 0
-    Container_Windows.ClipsDescendants = true
-    Container_Windows.Position = UDim2.new(0.5, 0, 0.602833867, 0)
-    Container_Windows.Size = UDim2.new(1, 0, 0.788318515, 0)
-    Container_Windows.Parent = Container_Main
-
-    Container_WindowsScrolling.Name = "Container_WindowsScrolling"
-    Container_WindowsScrolling.AnchorPoint = Vector2.new(0.5, 0.5)
-    Container_WindowsScrolling.BackgroundColor3 = Color3.new(1, 1, 1)
-    Container_WindowsScrolling.BackgroundTransparency = 1
-    Container_WindowsScrolling.BorderSizePixel = 0
-    Container_WindowsScrolling.ClipsDescendants = true
-    Container_WindowsScrolling.Position = UDim2.new(0.5, 0, 0.506659389, 0)
-    Container_WindowsScrolling.Size = UDim2.new(0.975000024, 0, 0.903275609, 0)
-    Container_WindowsScrolling.Parent = Container_Windows
-
-    Scrolling_Windows.Name = "Scrolling_Windows"
-    Scrolling_Windows.Active = true
-    Scrolling_Windows.AnchorPoint = Vector2.new(0.5, 0.5)
-    Scrolling_Windows.BackgroundColor3 = Color3.new(1, 1, 1)
-    Scrolling_Windows.BackgroundTransparency = 1
-    Scrolling_Windows.BorderSizePixel = 0
-    Scrolling_Windows.ClipsDescendants = false
-    Scrolling_Windows.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Scrolling_Windows.Size = UDim2.new(0.975000024, 0, 0.925000012, 0)
-    Scrolling_Windows.ScrollBarImageColor3 = Color3.fromRGB(160, 0, 166)
-    Scrolling_Windows.ScrollBarThickness = 2
-    Scrolling_Windows.Parent = Container_WindowsScrolling
-
-    GridLayout_Windows.Name = "GridLayout_Windows"
-    GridLayout_Windows.SortOrder = Enum.SortOrder.LayoutOrder
-    GridLayout_Windows.CellSize = UDim2.new(0.970000029, 0, 0.075000003, 0)
-    GridLayout_Windows.Parent = Scrolling_Windows
+    Container_TabView.Name = "Container_TabView"
+    Container_TabView.AnchorPoint = Vector2.new(0.5, 0.5)
+    Container_TabView.BackgroundColor3 = Color3.new(0, 0, 0)
+    Container_TabView.BackgroundTransparency = 1
+    Container_TabView.BorderSizePixel = 0
+    Container_TabView.ClipsDescendants = true
+    Container_TabView.Position = UDim2.new(0.5, 0, 0.602833867, 0)
+    Container_TabView.Size = UDim2.new(1, 0, 0.788318515, 0)
+    Container_TabView.Parent = Container_Main
 
     self.UI = Rhythm_Lib
     self.Drag = Container_Drag
     self.Close = Close
     self.Title = Title
     self.ScrollTabs = Scrolling_Tabs
-    self.ScrollWindows = Scrolling_Windows
+    self.TabView = Container_TabView
 
-    return self:WorkCode()
+    return self:_WindowCode()
 end
 
-function Rhythm_Library:WorkCode()
+function Rhythm_Library:_WindowCode()
     local lib = self
 
     dragify(self.Drag)
     updateCanvas(self.ScrollTabs, self.ScrollTabs.ListLayout_Tabs, Enum.ScrollingDirection.X)
-    updateCanvas(self.ScrollWindows, self.ScrollWindows.GridLayout_Windows, Enum.ScrollingDirection.Y)
 
     self.ScrollTabs.DescendantAdded:Connect(function()
         updateCanvas(self.ScrollTabs, self.ScrollTabs.ListLayout_Tabs, Enum.ScrollingDirection.X)
-    end)
-
-    self.ScrollWindows.DescendantAdded:Connect(function()
-        updateCanvas(self.ScrollWindows, self.ScrollWindows.GridLayout_Windows, Enum.ScrollingDirection.Y)
     end)
 
     self.Close.MouseButton1Click:Connect(function()
@@ -302,11 +304,10 @@ function Rhythm_Library:WorkCode()
         lib:DestroyWindow()
     end
 
-    function windowFuncs:CreateTab(tabOptions)
-        local tabName = tabOptions.name or tabOptions.Name or tabOptions[1] or tabOptions or "TAB"
-
+    function windowFuncs:Tab(tabOptions)
+        local tabName = tabOptions.name or tabOptions.Name or tabOptions[1] or tabOptions or "New Tab"
         assert(typeof(tabName) == "string", string.format("%s %s", assertions[1] .. "; user tried to set name to:", tabName))
-        tabName = tabName:upper()
+        assert(not lib.TabView:FindFirstChild(tabName), string.format("%s %s", assertions[3] .. "; user tried to set name to:", tabName))
 
         local Container_TabButton = Instance.new("Frame")
         local Corner_TabButton = Instance.new("UICorner")
@@ -315,12 +316,16 @@ function Rhythm_Library:WorkCode()
         local Image_TabButton = Instance.new("ImageLabel")
         local Button_TabButton = Instance.new("TextButton")
         local Stroke_TabButton = Instance.new("UIStroke")
+        local Container_TabViewScrolling = Instance.new("Frame")
+        local Scrolling_TabView = Instance.new("ScrollingFrame")
+        local ListLayout_TabView = Instance.new("UIListLayout")
         
-        Container_TabButton.Name = "Container_TabButton"
+        Container_TabButton.Name = tabName
         Container_TabButton.AnchorPoint = Vector2.new(0.5, 0.5)
         Container_TabButton.BackgroundColor3 = Color3.new(0.298039, 0, 0.364706)
         Container_TabButton.BorderSizePixel = 0
         Container_TabButton.Size = UDim2.new(0, 83, 0, 19)
+        Collection:AddTag(Container_TabButton, tabName)
         Container_TabButton.Parent = lib.ScrollTabs
         
         Corner_TabButton.Name = "Corner_TabButton"
@@ -378,8 +383,76 @@ function Rhythm_Library:WorkCode()
         Stroke_TabButton.LineJoinMode = Enum.LineJoinMode.Round
         Stroke_TabButton.Parent = Container_TabButton
 
-        Button_TabButton.MouseEnter:Connect(function()
-            Container_TabButton:TweenSize(
+        Container_TabViewScrolling.Name = tabName
+        Container_TabViewScrolling.AnchorPoint = Vector2.new(0.5, 0.5)
+        Container_TabViewScrolling.BackgroundColor3 = Color3.new(1, 1, 1)
+        Container_TabViewScrolling.BackgroundTransparency = 1
+        Container_TabViewScrolling.BorderSizePixel = 0
+        Container_TabViewScrolling.ClipsDescendants = true
+        Container_TabViewScrolling.Position = UDim2.new(0.5, 0, 0.506659389, 0)
+        Container_TabViewScrolling.Size = UDim2.new(0.975000024, 0, 0.903275609, 0)
+        Container_TabViewScrolling.Visible = false
+        Container_TabViewScrolling:SetAttribute("Toggled", false)
+        Container_TabViewScrolling.Parent = lib.TabView
+    
+        Scrolling_TabView.Name = "Scrolling_TabView"
+        Scrolling_TabView.Active = true
+        Scrolling_TabView.AnchorPoint = Vector2.new(0.5, 0.5)
+        Scrolling_TabView.BackgroundColor3 = Color3.new(1, 1, 1)
+        Scrolling_TabView.BackgroundTransparency = 1
+        Scrolling_TabView.BorderSizePixel = 0
+        Scrolling_TabView.ClipsDescendants = false
+        Scrolling_TabView.Position = UDim2.new(0.5, 0, 0.5, 0)
+        Scrolling_TabView.Size = UDim2.new(0.975000024, 0, 0.925000012, 0)
+        Scrolling_TabView.ScrollBarImageColor3 = Color3.fromRGB(160, 0, 166)
+        Scrolling_TabView.ScrollBarThickness = 2
+        Scrolling_TabView.Parent = Container_TabViewScrolling
+
+        ListLayout_TabView.Name = "ListLayout_TabView"
+        ListLayout_TabView.FillDirection = Enum.FillDirection.Vertical
+        ListLayout_TabView.SortOrder = Enum.SortOrder.LayoutOrder
+        ListLayout_TabView.Padding = UDim.new(0.15, 0)
+        ListLayout_TabView.Parent = Scrolling_TabView
+
+        self[tabName] = {}
+        self[tabName].Button = Button_TabButton
+        self[tabName].Container = Container_TabButton
+        self[tabName].ContainerTabView = Container_TabViewScrolling
+        self[tabName].ScrollTabView = Scrolling_TabView
+        self[tabName].tabName = tabName
+
+        return self:_TabCode(self[tabName])
+    end
+
+    function windowFuncs:_TabCode(data)
+        updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
+
+        data.ScrollTabView.DescendantAdded:Connect(function()
+            updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.X)
+        end)
+
+        local tabs = lib.TabView:GetChildren()
+
+        if not tabs[2] then
+            data.ContainerTabView.Visible = true
+            data.Container:SetAttribute("Toggled", true)
+
+            data.Container:TweenSize(
+                UDim2.new(0, 125, 0, 19),
+                Enum.EasingDirection.Out,
+                Enum.EasingStyle.Quint,
+                0.4,
+                true,
+                function()
+                    updateCanvas(lib.ScrollTabs, lib.ScrollTabs.ListLayout_Tabs, Enum.ScrollingDirection.X, nil, true)
+                end
+            )
+        end
+
+        data.Button.MouseEnter:Connect(function()
+            if data.Container:GetAttribute("Toggled") then return end
+
+            data.Container:TweenSize(
                 UDim2.new(0, 125, 0, 19),
                 Enum.EasingDirection.Out,
                 Enum.EasingStyle.Quint,
@@ -391,8 +464,10 @@ function Rhythm_Library:WorkCode()
             )
         end)
 
-        Button_TabButton.MouseLeave:Connect(function()
-            Container_TabButton:TweenSize(
+        data.Button.MouseLeave:Connect(function()
+            if data.Container:GetAttribute("Toggled") then return end
+            
+            data.Container:TweenSize(
                 UDim2.new(0, 83, 0, 19),
                 Enum.EasingDirection.Out,
                 Enum.EasingStyle.Quint,
@@ -404,29 +479,73 @@ function Rhythm_Library:WorkCode()
             )
         end)
 
-        Button_TabButton.MouseButton1Click:Connect(function()
-            print("Selected tab:", tabName)
+        data.Button.MouseButton1Click:Connect(function()
+            if data.Container:GetAttribute("Toggled") then return end
+
+            for _, tab in pairs(lib.TabView:GetChildren()) do
+                if tab.Name == data.ContainerTabView.Name then
+                    tab.Visible = true
+                    data.Container:SetAttribute("Toggled", true)
+                    data.Container:TweenSize(
+                        UDim2.new(0, 125, 0, 19),
+                        Enum.EasingDirection.Out,
+                        Enum.EasingStyle.Quint,
+                        0.4,
+                        true,
+                        function()
+                            updateCanvas(lib.ScrollTabs, lib.ScrollTabs.ListLayout_Tabs, Enum.ScrollingDirection.X, nil, true)
+                        end
+                    )
+                else
+                    tab.Visible = false
+
+                    local tbView = Collection:GetTagged(tab.Name)[1]
+                    tbView:SetAttribute("Toggled", false)
+                    tbView:TweenSize(
+                        UDim2.new(0, 83, 0, 19),
+                        Enum.EasingDirection.Out,
+                        Enum.EasingStyle.Quint,
+                        0.4,
+                        true,
+                        function()
+                            updateCanvas(lib.ScrollTabs, lib.ScrollTabs.ListLayout_Tabs, Enum.ScrollingDirection.X, nil, true)
+                        end
+                    )
+                end
+            end
         end)
 
         local tabFuncs = {}
 
-        function tabFuncs:CreateSection(sectionOptions)
+        function tabFuncs:Section(sectionOptions)
 
             local sectionFuncs = {}
 
-            function sectionFuncs:CreateLabel(labelOptions)
+            function sectionFuncs:Label(labelOptions)
 
             end
 
-            function sectionFuncs:CreateTextBox(textBoxOptions)
+            function sectionFuncs:Button(buttonOptions)
 
             end
 
-            function sectionFuncs:CreateButton(buttonOptions)
+            function sectionFuncs:TextBox(textBoxOptions)
 
             end
 
-            function sectionFuncs:CreateSlider(sliderOptions)
+            function sectionFuncs:Slider(sliderOptions)
+
+            end
+
+            function sectionFuncs:Dropdown(dropdownOptions)
+
+            end
+
+            function sectionFuncs:Toggle(toggleOptions)
+
+            end
+
+            function sectionFuncs:Keybind(keybindOptions)
 
             end
 
@@ -440,7 +559,44 @@ function Rhythm_Library:WorkCode()
 end
 
 function Rhythm_Library:DestroyWindow()
+    self.Drag:TweenSizeAndPosition(
+        UDim2.new(0, 0, 0, 0),
+        UDim2.new(self.Drag.Position.X, 0, -10, 0),
+        nil,
+        nil,
+        .15
+    )
+    task.wait(.25)
     self.UI:Destroy()
+end
+
+function Rhythm_Library:Toggle()
+    if _toggling then return end
+    _toggling = true
+
+    if getgenv().Rhythm_Library.Toggled then
+        self.Drag:TweenSizeAndPosition(
+            UDim2.new(0, 0, 0, 0),
+            UDim2.new(self.Drag.Position.X, 0, -10, 0),
+            nil,
+            nil,
+            .15
+        )
+        task.wait(.15)
+        self.Drag.Visible = false
+    else
+        self.Drag.Visible = true
+        self.Drag:TweenSizeAndPosition(
+            UDim2.new(0, 560, 0, 326),
+            UDim2.new(0.5, 0, 0.5, 0),
+            nil,
+            nil,
+            .15
+        )
+    end
+
+    getgenv().Rhythm_Library.Toggled = not getgenv().Rhythm_Library.Toggled
+    _toggling = false
 end
 
 function Rhythm_Library:ChangeTitle(title)
@@ -448,15 +604,23 @@ function Rhythm_Library:ChangeTitle(title)
     self.Title.Text = title
 end
 
+UIS.InputEnded:Connect(function(input, gameProcessedEvent)
+    if gameProcessedEvent then return end
+
+    if input.KeyCode == getgenv().Rhythm_Library.Keybind then
+        Rhythm_Library:Toggle()
+    end
+end)
 
 -- Testing
 
-local window = Rhythm_Library:CreateWindow("RHYTHMLIB | TESTING")
-local tab1 = window:CreateTab("Test 1")
-local tab2 = window:CreateTab("Test 2")
-local tab3 = window:CreateTab("Test 3")
-local tab4 = window:CreateTab("Test 4")
-local tab5 = window:CreateTab("Test 5")
-local tab6 = window:CreateTab("Test 6")
+local window = Rhythm_Library:Window("RHYTHMLIB | TESTING")
+
+local tab1 = window:Tab("Auto Farm")
+local tab2 = window:Tab("Auto Time Trial")
+local tab3 = window:Tab("Auto Buy")
+local tab4 = window:Tab("Webhook")
+local tab5 = window:Tab("Misc")
+local tab6 = window:Tab("Premium")
 
 --return Rhythm_Library
