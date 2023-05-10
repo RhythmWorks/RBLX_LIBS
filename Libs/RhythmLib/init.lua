@@ -10,7 +10,8 @@ loadstring(game:HttpGet("https://api.irisapp.ca/Scripts/IrisInstanceProtect.lua"
 
 getgenv().Rhythm_Library = {
     Toggled = true,
-    Keybind = Enum.KeyCode.RightControl
+    Keybind = Enum.KeyCode.RightControl,
+    OriginalPos = nil
 }
 
 local Collection = game:GetService("CollectionService")
@@ -19,6 +20,8 @@ local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
 
 local Player = Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+
 local _toggling = false
 local assertions = {
     "Invalid type for property \"name\"",
@@ -32,7 +35,10 @@ local function dragify(Frame)
     local function updateInput(input)
         Delta = input.Position - dragStart
         Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + Delta.X, startPos.Y.Scale, startPos.Y.Offset + Delta.Y)
-        game:GetService("TweenService"):Create(Frame, TweenInfo.new(.25), {Position = Position}):Play()
+        local tween = game:GetService("TweenService"):Create(Frame, TweenInfo.new(.25), {Position = Position})
+        tween:Play()
+        tween.Completed:Wait()
+        getgenv().Rhythm_Library.OriginalPos = Frame.Position
     end
     
     Frame.InputBegan:Connect(function(input)
@@ -88,6 +94,15 @@ local function updateCanvas(scrollingFrame, layout, scrollingDirection, padding,
         end
         scrollingFrame.CanvasSize = UDim2.fromOffset(layout.AbsoluteContentSize.X, layout.AbsoluteContentSize.Y + padding)
 	end
+end
+
+local function updateFrame(frame, label)
+    local result = frame.Size.X + (label.TextBounds.X - frame.Size.X) + 10
+    print(result)
+    local _, err = pcall(function()
+        frame.Size = UDim2.fromOffset(result, frame.Size.Y)
+    end)
+    if not _ then warn(err) end
 end
 
 local function generateId(length)
@@ -346,6 +361,7 @@ function Rhythm_Library:_WindowCode()
         Text_TabButton.TextSize = 14
         Text_TabButton.TextWrapped = true
         Text_TabButton.Parent = Container_TabButton
+        updateFrame(Container_TabButton, Text_TabButton)
         
         TextConstraint_TabButton.MaxTextSize = 18
         TextConstraint_TabButton.Parent = Text_TabButton
@@ -403,7 +419,7 @@ function Rhythm_Library:_WindowCode()
         Scrolling_TabView.BorderSizePixel = 0
         Scrolling_TabView.ClipsDescendants = false
         Scrolling_TabView.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Scrolling_TabView.Size = UDim2.new(0.975000024, 0, 0.925000012, 0)
+        Scrolling_TabView.Size = UDim2.new(0.975000024, 0, 0.97, 0)
         Scrolling_TabView.ScrollBarImageColor3 = Color3.fromRGB(160, 0, 166)
         Scrolling_TabView.ScrollBarThickness = 2
         Scrolling_TabView.Parent = Container_TabViewScrolling
@@ -411,7 +427,7 @@ function Rhythm_Library:_WindowCode()
         ListLayout_TabView.Name = "ListLayout_TabView"
         ListLayout_TabView.FillDirection = Enum.FillDirection.Vertical
         ListLayout_TabView.SortOrder = Enum.SortOrder.LayoutOrder
-        ListLayout_TabView.Padding = UDim.new(0.15, 0)
+        ListLayout_TabView.Padding = UDim.new(0.015, 0)
         ListLayout_TabView.Parent = Scrolling_TabView
 
         self[tabName] = {}
@@ -515,18 +531,225 @@ function Rhythm_Library:_WindowCode()
             end
         end)
 
+        local function createSectionEnder()
+            local Ender = Instance.new("Frame")
+            local Image_Ender = Instance.new("ImageLabel")
+
+            Ender.Name = "Ender"
+            Ender.Parent = data.ScrollTabView
+            Ender.BackgroundColor3 = Color3.new(0.345098, 0, 0.403922)
+            Ender.BackgroundTransparency = 0.25
+            Ender.BorderSizePixel = 0
+            Ender.Position = UDim2.new(-0.00223214296, 0, 0.625, 0)
+            Ender.Size = UDim2.new(0, 469, 0, 4)
+            
+            Image_Ender.Name = "Image_Ender"
+            Image_Ender.Parent = Ender
+            Image_Ender.AnchorPoint = Vector2.new(0.5, 0.5)
+            Image_Ender.BackgroundColor3 = Color3.new(1, 1, 1)
+            Image_Ender.BackgroundTransparency = 1
+            Image_Ender.BorderSizePixel = 0
+            Image_Ender.Position = UDim2.new(0.5, 0, 0.5, 0)
+            Image_Ender.Size = UDim2.new(1, 0, 1, 0)
+            Image_Ender.ZIndex = 0
+            Image_Ender.Image = "rbxassetid://13120553044"
+            Image_Ender.ImageColor3 = Color3.new(0.831373, 0, 1)
+            Image_Ender.ImageTransparency = 0.75
+            Image_Ender.ScaleType = Enum.ScaleType.Crop
+        end
+
+        local function createSectionDivider()
+            local Divider = Instance.new("Frame")
+
+            Divider.Name = "Divider"
+            Divider.Parent = data.ScrollTabView
+            Divider.BackgroundColor3 = Color3.new(1, 1, 1)
+            Divider.BackgroundTransparency = 1
+            Divider.BorderSizePixel = 0
+            Divider.Position = UDim2.new(-0.00223214296, 0, 0.625, 0)
+            Divider.Size = UDim2.new(0, 469, 0, 9)
+        end
+
+        local function createSectionStarter(sectionName)
+            local Starter = Instance.new("Frame")
+            local Corner_Starter = Instance.new("UICorner")
+            local Label_Starter = Instance.new("TextLabel")
+            local Constraint_Label = Instance.new("UITextSizeConstraint")
+            local Image_Starter = Instance.new("ImageLabel")
+
+            Starter.Name = "Starter"
+            Starter.Parent = data.ScrollTabView
+            Starter.BackgroundColor3 = Color3.fromRGB(88, 0, 103)
+            Starter.BackgroundTransparency = 0.250
+            Starter.BorderSizePixel = 0
+            Starter.Position = UDim2.new(-0.00223214296, 0, 0.625, 0)
+            Starter.Size = UDim2.new(0, 469, 0, 18)
+
+            Corner_Starter.CornerRadius = UDim.new(0.25, 0)
+            Corner_Starter.Name = "Corner_Starter"
+            Corner_Starter.Parent = Starter
+
+            Label_Starter.Name = "Label_Starter"
+            Label_Starter.Parent = Starter
+            Label_Starter.AnchorPoint = Vector2.new(0.5, 0.5)
+            Label_Starter.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Label_Starter.BackgroundTransparency = 1.000
+            Label_Starter.BorderSizePixel = 0
+            Label_Starter.Position = UDim2.new(0.5, 0, 0.5, 0)
+            Label_Starter.Size = UDim2.new(1, 0, 0.9, 0)
+            Label_Starter.Font = Enum.Font.SourceSans
+            Label_Starter.Text = sectionName
+            Label_Starter.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Label_Starter.TextScaled = true
+            Label_Starter.TextSize = 14.000
+            Label_Starter.TextWrapped = true
+
+            Constraint_Label.Name = "Constraint_Label"
+            Constraint_Label.Parent = Label_Starter
+            Constraint_Label.MaxTextSize = 16
+
+            Image_Starter.Name = "Image_Starter"
+            Image_Starter.Parent = Starter
+            Image_Starter.AnchorPoint = Vector2.new(0.5, 0.5)
+            Image_Starter.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Image_Starter.BackgroundTransparency = 1.000
+            Image_Starter.BorderSizePixel = 0
+            Image_Starter.Position = UDim2.new(0.5, 0, 0.5, 0)
+            Image_Starter.Size = UDim2.new(1, 0, 1, 0)
+            Image_Starter.ZIndex = 0
+            Image_Starter.Image = "rbxassetid://13120553044"
+            Image_Starter.ImageColor3 = Color3.fromRGB(212, 0, 255)
+            Image_Starter.ImageTransparency = 0.750
+            Image_Starter.ScaleType = Enum.ScaleType.Crop
+        end
+
         local tabFuncs = {}
 
         function tabFuncs:Section(sectionOptions)
+            local sectionName = sectionOptions.name or sectionOptions.Name or sectionOptions[1] or sectionOptions or "New Section"
+            assert(typeof(sectionName) == "string", string.format("%s %s", assertions[1] .. "; user tried to set name to:", sectionName))
+
+            local num = 0
+            for _, obj in pairs(data.ScrollTabView:GetChildren()) do
+                if obj.Name == "Starter" then
+                    num = num + 1
+                end
+            end
+
+            if num > 0 then
+                createSectionEnder()
+                createSectionDivider()
+            end
+            createSectionStarter(sectionName)
 
             local sectionFuncs = {}
 
             function sectionFuncs:Label(labelOptions)
+                local labelText = labelOptions.name or labelOptions.Name or labelOptions[1] or labelOptions or "New Label"
+                assert(typeof(labelText) == "string", string.format("%s %s", assertions[1] .. "; user tried to set text to:", labelText))
 
+                local Item_Label = Instance.new("TextLabel")
+                local Corner_Label = Instance.new("UICorner")
+                local Constraint_Label = Instance.new("UITextSizeConstraint")
+                local Image_Label = Instance.new("ImageLabel")
+
+                Item_Label.Name = "Item_Label"
+                Item_Label.Parent = data.ScrollTabView
+                Item_Label.AnchorPoint = Vector2.new(0.5, 0.5)
+                Item_Label.BackgroundColor3 = Color3.new(0.109804, 0, 0.152941)
+                Item_Label.Position = UDim2.new(-0.00886476971, 0, 0.254924744, 0)
+                Item_Label.Size = UDim2.new(0, 470, 0, 22)
+                Item_Label.Font = Enum.Font.SourceSans
+                Item_Label.Text = labelText
+                Item_Label.TextColor3 = Color3.new(0.796078, 0.796078, 0.796078)
+                Item_Label.TextScaled = true
+                Item_Label.TextSize = 14
+                Item_Label.TextWrapped = true
+                
+                Corner_Label.Name = "Corner_Label"
+                Corner_Label.Parent = Item_Label
+                Corner_Label.CornerRadius = UDim.new(0.200000003, 0)
+                
+                Constraint_Label.Name = "Constraint_Label"
+                Constraint_Label.Parent = Item_Label
+                Constraint_Label.MaxTextSize = 14
+                
+                Image_Label.Name = "Image_Label"
+                Image_Label.Parent = Item_Label
+                Image_Label.AnchorPoint = Vector2.new(0.5, 0.5)
+                Image_Label.BackgroundColor3 = Color3.new(1, 1, 1)
+                Image_Label.BackgroundTransparency = 1
+                Image_Label.BorderSizePixel = 0
+                Image_Label.Position = UDim2.new(0.5, 0, 0.5, 0)
+                Image_Label.Size = UDim2.new(1, 0, 1, 0)
+                Image_Label.ZIndex = 0
+                Image_Label.Image = "rbxassetid://13120553044"
+                Image_Label.ImageColor3 = Color3.new(0.831373, 0, 1)
+                Image_Label.ImageTransparency = 0.75
+                Image_Label.ScaleType = Enum.ScaleType.Crop
             end
 
-            function sectionFuncs:Button(buttonOptions)
+            function sectionFuncs:Button(buttonOptions, callback)
+                local buttonText = buttonOptions.name or buttonOptions.Name or buttonOptions[1] or buttonOptions or "New Label"
+                assert(typeof(buttonText) == "string", string.format("%s %s", assertions[1] .. "; user tried to set text to:", buttonText))
 
+                local _callback = buttonOptions.callback or buttonOptions.Callback or buttonOptions[1] or buttonOptions[2] or callback
+                local Item_Button = Instance.new("TextButton")
+                local Corner_Button = Instance.new("UICorner")
+                local Constraint_Button = Instance.new("UITextSizeConstraint")
+                local Image_Click = Instance.new("ImageLabel")
+                local Image_Button = Instance.new("ImageLabel")
+
+                Item_Button.Name = "Item_Button"
+                Item_Button.Parent = data.ScrollTabView
+                Item_Button.AnchorPoint = Vector2.new(0.5, 0.5)
+                Item_Button.BackgroundColor3 = Color3.new(0.109804, 0, 0.152941)
+                Item_Button.BorderSizePixel = 0
+                Item_Button.Position = UDim2.new(0.490487695, 0, 0.446806997, 0)
+                Item_Button.Size = UDim2.new(0, 470, 0, 22)
+                Item_Button.AutoButtonColor = false
+                Item_Button.Font = Enum.Font.SourceSans
+                Item_Button.Text = buttonText
+                Item_Button.TextColor3 = Color3.new(0.796078, 0.796078, 0.796078)
+                Item_Button.TextScaled = true
+                Item_Button.TextSize = 14
+                Item_Button.TextWrapped = true
+                
+                Corner_Button.Name = "Corner_Button"
+                Corner_Button.Parent = Item_Button
+                Corner_Button.CornerRadius = UDim.new(0.200000003, 0)
+                
+                Constraint_Button.Name = "Constraint_Button"
+                Constraint_Button.Parent = Item_Button
+                Constraint_Button.MaxTextSize = 14
+                
+                Image_Click.Name = "Image_Click"
+                Image_Click.Parent = Item_Button
+                Image_Click.AnchorPoint = Vector2.new(0.5, 0.5)
+                Image_Click.BackgroundColor3 = Color3.new(1, 1, 1)
+                Image_Click.BackgroundTransparency = 1
+                Image_Click.BorderSizePixel = 0
+                Image_Click.Position = UDim2.new(0.970000029, 0, 0.524999976, 0)
+                Image_Click.Size = UDim2.new(0.0350000001, 0, 0.75, 0)
+                Image_Click.Image = "rbxassetid://11255462876"
+                
+                Image_Button.Name = "Image_Button"
+                Image_Button.Parent = Item_Button
+                Image_Button.AnchorPoint = Vector2.new(0.5, 0.5)
+                Image_Button.BackgroundColor3 = Color3.new(1, 1, 1)
+                Image_Button.BackgroundTransparency = 1
+                Image_Button.BorderSizePixel = 0
+                Image_Button.Position = UDim2.new(0.5, 0, 0.5, 0)
+                Image_Button.Size = UDim2.new(1, 0, 1, 0)
+                Image_Button.ZIndex = 0
+                Image_Button.Image = "rbxassetid://13120553044"
+                Image_Button.ImageColor3 = Color3.new(0.831373, 0, 1)
+                Image_Button.ImageTransparency = 0.75
+                Image_Button.ScaleType = Enum.ScaleType.Crop
+
+                Item_Button.MouseButton1Click:Connect(function()
+                    pcall(_callback)
+                end)
             end
 
             function sectionFuncs:TextBox(textBoxOptions)
@@ -588,7 +811,7 @@ function Rhythm_Library:Toggle()
         self.Drag.Visible = true
         self.Drag:TweenSizeAndPosition(
             UDim2.new(0, 560, 0, 326),
-            UDim2.new(0.5, 0, 0.5, 0),
+            getgenv().Rhythm_Library.OriginalPos,
             nil,
             nil,
             .15
@@ -617,6 +840,15 @@ end)
 local window = Rhythm_Library:Window("RHYTHMLIB | TESTING")
 
 local tab1 = window:Tab("Auto Farm")
+local s1_t1 = tab1:Section("Auto Equip")
+s1_t1:Label("Auto AFK Position: N/A")
+s1_t1:Button("Jump!", function()
+    Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    print("Jumped!")
+end)
+
+local s1_t1 = tab1:Section("Auto Class Up")
+
 local tab2 = window:Tab("Auto Time Trial")
 local tab3 = window:Tab("Auto Buy")
 local tab4 = window:Tab("Webhook")
