@@ -96,13 +96,25 @@ local function updateCanvas(scrollingFrame, layout, scrollingDirection, padding,
 	end
 end
 
-local function updateFrame(frame, label)
-    local result = frame.Size.X + (label.TextBounds.X - frame.Size.X) + 10
-    print(result)
-    local _, err = pcall(function()
-        frame.Size = UDim2.fromOffset(result, frame.Size.Y)
-    end)
-    if not _ then warn(err) end
+local function updateFrame(frame, label: TextLabel)
+    local frameSizeX = frame.Size.X.Offset
+    local labelBoundsX = label.TextBounds.X
+
+    if labelBoundsX > 50 then
+        local result = frameSizeX + (labelBoundsX - frameSizeX) + 35
+
+        local Fixed = Instance.new("StringValue")
+        Fixed.Name = "Fixed"
+        Fixed.Value = result + 42
+        Fixed.Parent = label
+
+        local Fixed2 = Instance.new("StringValue")
+        Fixed2.Name = "Fixed2"
+        Fixed2.Value = result
+        Fixed2.Parent = label
+
+        frame.Size = UDim2.fromOffset(result, frame.Size.Y.Offset)
+    end
 end
 
 local function generateId(length)
@@ -435,6 +447,7 @@ function Rhythm_Library:_WindowCode()
         self[tabName].Container = Container_TabButton
         self[tabName].ContainerTabView = Container_TabViewScrolling
         self[tabName].ScrollTabView = Scrolling_TabView
+        self[tabName].Label = Text_TabButton
         self[tabName].tabName = tabName
 
         return self:_TabCode(self[tabName])
@@ -449,12 +462,15 @@ function Rhythm_Library:_WindowCode()
 
         local tabs = lib.TabView:GetChildren()
 
+        local fixed = data.Label:FindFirstChild("Fixed") or 125
+        local fixed2 = data.Label:FindFirstChild("Fixed2") or 83
+
         if not tabs[2] then
             data.ContainerTabView.Visible = true
             data.Container:SetAttribute("Toggled", true)
 
             data.Container:TweenSize(
-                UDim2.new(0, 125, 0, 19),
+                UDim2.new(0, fixed, 0, 19),
                 Enum.EasingDirection.Out,
                 Enum.EasingStyle.Quint,
                 0.4,
@@ -464,12 +480,20 @@ function Rhythm_Library:_WindowCode()
                 end
             )
         end
+        
+        if typeof(fixed) == "Instance" then
+            fixed = fixed.Value
+        end
+
+        if typeof(fixed2) == "Instance" then
+            fixed2 = fixed2.Value
+        end
 
         data.Button.MouseEnter:Connect(function()
             if data.Container:GetAttribute("Toggled") then return end
 
             data.Container:TweenSize(
-                UDim2.new(0, 125, 0, 19),
+                UDim2.new(0, fixed, 0, 19),
                 Enum.EasingDirection.Out,
                 Enum.EasingStyle.Quint,
                 0.4,
@@ -484,7 +508,7 @@ function Rhythm_Library:_WindowCode()
             if data.Container:GetAttribute("Toggled") then return end
             
             data.Container:TweenSize(
-                UDim2.new(0, 83, 0, 19),
+                UDim2.new(0, fixed2, 0, 19),
                 Enum.EasingDirection.Out,
                 Enum.EasingStyle.Quint,
                 0.4,
@@ -503,7 +527,7 @@ function Rhythm_Library:_WindowCode()
                     tab.Visible = true
                     data.Container:SetAttribute("Toggled", true)
                     data.Container:TweenSize(
-                        UDim2.new(0, 125, 0, 19),
+                        UDim2.new(0, fixed, 0, 19),
                         Enum.EasingDirection.Out,
                         Enum.EasingStyle.Quint,
                         0.4,
@@ -516,9 +540,15 @@ function Rhythm_Library:_WindowCode()
                     tab.Visible = false
 
                     local tbView = Collection:GetTagged(tab.Name)[1]
+                    local tbFixed2 = tbView["Text_TabButton"]:FindFirstChild("Fixed2") or 83
+
+                    if typeof(tbFixed2) == "Instance" then
+                        tbFixed2 = tbFixed2.Value
+                    end
+
                     tbView:SetAttribute("Toggled", false)
                     tbView:TweenSize(
-                        UDim2.new(0, 83, 0, 19),
+                        UDim2.new(0, tbFixed2, 0, 19),
                         Enum.EasingDirection.Out,
                         Enum.EasingStyle.Quint,
                         0.4,
