@@ -10,23 +10,26 @@ loadstring(game:HttpGet("https://api.irisapp.ca/Scripts/IrisInstanceProtect.lua"
 
 getgenv().Rhythm_Library = {
     Toggled = true,
-    Keybind = Enum.KeyCode.RightControl,
-    OriginalPos = nil
+    Keybind = Enum.KeyCode.LeftControl,
+    OriginalPos = UDim2.new(0.5, 0, 0.5, 0)
 }
 
 local Collection = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 
 local Player = Players.LocalPlayer
 local Character = Player.Character or Player.CharacterAdded:Wait()
 
 local _toggling = false
+local connection = nil
+
 local assertions = {
     "Invalid type for property \"name\"",
     "Missing argument",
-    "Tried to duplicate tab name"
+    "Tried to duplicate tab name",
 }
 
 local function dragify(Frame)
@@ -74,7 +77,6 @@ local function updateCanvas(scrollingFrame, layout, scrollingDirection, padding,
             game:GetService("TweenService"):Create(scrollingFrame, TweenInfo.new(0.25), {
                 CanvasSize = UDim2.fromOffset(layout.AbsoluteContentSize.X + padding, layout.AbsoluteContentSize.Y + padding)
             }):Play()
-            return
         end
 		scrollingFrame.CanvasSize = UDim2.fromOffset(layout.AbsoluteContentSize.X + padding, layout.AbsoluteContentSize.Y + padding)
 	elseif scrollingDirection == Enum.ScrollingDirection.X then
@@ -82,7 +84,6 @@ local function updateCanvas(scrollingFrame, layout, scrollingDirection, padding,
             game:GetService("TweenService"):Create(scrollingFrame, TweenInfo.new(0.25), {
                 CanvasSize = UDim2.fromOffset(layout.AbsoluteContentSize.X + padding, layout.AbsoluteContentSize.Y)
             }):Play()
-            return
         end
         scrollingFrame.CanvasSize = UDim2.fromOffset(layout.AbsoluteContentSize.X + padding, layout.AbsoluteContentSize.Y)
 	elseif scrollingDirection == Enum.ScrollingDirection.Y then
@@ -90,7 +91,6 @@ local function updateCanvas(scrollingFrame, layout, scrollingDirection, padding,
             game:GetService("TweenService"):Create(scrollingFrame, TweenInfo.new(0.25), {
                 CanvasSize = UDim2.fromOffset(layout.AbsoluteContentSize.X, layout.AbsoluteContentSize.Y + padding)
             }):Play()
-            return
         end
         scrollingFrame.CanvasSize = UDim2.fromOffset(layout.AbsoluteContentSize.X, layout.AbsoluteContentSize.Y + padding)
 	end
@@ -271,6 +271,7 @@ function Rhythm_Library:Window(windowOptions)
     Scrolling_Tabs.BackgroundTransparency = 1
     Scrolling_Tabs.BorderSizePixel = 0
     Scrolling_Tabs.ClipsDescendants = false
+    Scrolling_Tabs.ElasticBehavior = Enum.ElasticBehavior.Never
     Scrolling_Tabs.Position = UDim2.new(0.5, 0, 0.48, 0)
     Scrolling_Tabs.Size = UDim2.new(0.985, 0, 0.8, 0)
     Scrolling_Tabs.HorizontalScrollBarInset = Enum.ScrollBarInset.Always
@@ -430,6 +431,7 @@ function Rhythm_Library:_WindowCode()
         Scrolling_TabView.BackgroundTransparency = 1
         Scrolling_TabView.BorderSizePixel = 0
         Scrolling_TabView.ClipsDescendants = false
+        Scrolling_TabView.ElasticBehavior = Enum.ElasticBehavior.Never
         Scrolling_TabView.Position = UDim2.new(0.5, 0, 0.5, 0)
         Scrolling_TabView.Size = UDim2.new(0.975000024, 0, 0.97, 0)
         Scrolling_TabView.ScrollBarImageColor3 = Color3.fromRGB(160, 0, 166)
@@ -454,11 +456,11 @@ function Rhythm_Library:_WindowCode()
     end
 
     function windowFuncs:_TabCode(data)
-        updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
-
         data.ScrollTabView.DescendantAdded:Connect(function()
-            updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.X)
+            --updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
         end)
+
+        updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
 
         local tabs = lib.TabView:GetChildren()
 
@@ -586,6 +588,8 @@ function Rhythm_Library:_WindowCode()
             Image_Ender.ImageColor3 = Color3.new(0.831373, 0, 1)
             Image_Ender.ImageTransparency = 0.75
             Image_Ender.ScaleType = Enum.ScaleType.Crop
+
+            updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
         end
 
         local function createSectionDivider()
@@ -598,6 +602,8 @@ function Rhythm_Library:_WindowCode()
             Divider.BorderSizePixel = 0
             Divider.Position = UDim2.new(-0.00223214296, 0, 0.625, 0)
             Divider.Size = UDim2.new(0, 469, 0, 9)
+
+            updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
         end
 
         local function createSectionStarter(sectionName)
@@ -651,6 +657,8 @@ function Rhythm_Library:_WindowCode()
             Image_Starter.ImageColor3 = Color3.fromRGB(212, 0, 255)
             Image_Starter.ImageTransparency = 0.750
             Image_Starter.ScaleType = Enum.ScaleType.Crop
+
+            updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
         end
 
         local tabFuncs = {}
@@ -717,13 +725,17 @@ function Rhythm_Library:_WindowCode()
                 Image_Label.ImageColor3 = Color3.new(0.831373, 0, 1)
                 Image_Label.ImageTransparency = 0.75
                 Image_Label.ScaleType = Enum.ScaleType.Crop
+
+                updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
             end
 
             function sectionFuncs:Button(buttonOptions, callback)
-                local buttonText = buttonOptions.name or buttonOptions.Name or buttonOptions[1] or buttonOptions or "New Label"
+                local buttonText = buttonOptions.name or buttonOptions.Name or buttonOptions[1] or buttonOptions or "New Button"
                 assert(typeof(buttonText) == "string", string.format("%s %s", assertions[1] .. "; user tried to set text to:", buttonText))
 
-                local _callback = buttonOptions.callback or buttonOptions.Callback or buttonOptions[1] or buttonOptions[2] or callback
+                local _callback = buttonOptions.callback or buttonOptions.Callback or buttonOptions[2] or callback
+                assert(typeof(_callback) == "function", assertions[1] .. "; user tried to set callback to an unknown value.")
+
                 local Item_Button = Instance.new("TextButton")
                 local Corner_Button = Instance.new("UICorner")
                 local Constraint_Button = Instance.new("UITextSizeConstraint")
@@ -780,6 +792,224 @@ function Rhythm_Library:_WindowCode()
                 Item_Button.MouseButton1Click:Connect(function()
                     pcall(_callback)
                 end)
+
+                updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
+            end
+
+            function sectionFuncs:Dropdown(dropdownOptions, items, callback)
+                local buttonText = dropdownOptions.name or dropdownOptions.Name or dropdownOptions[1] or "New Dropdown"
+                assert(typeof(buttonText) == "string", string.format("%s %s", assertions[1] .. "; user tried to set text to:", buttonText))
+
+                local _items = dropdownOptions.items or dropdownOptions.Items or dropdownOptions[2] or items
+                assert(typeof(_items) == "table", assertions[1] .. "; user tried to set items to an unknown value.")
+
+                local _callback = dropdownOptions.callback or dropdownOptions.Callback or dropdownOptions[3] or callback
+                assert(typeof(_callback) == "function", assertions[1] .. "; user tried to set callback to an unknown value.")
+
+                local Item_Button = Instance.new("TextButton")
+                local Corner_Button = Instance.new("UICorner")
+                local Constraint_Button = Instance.new("UITextSizeConstraint")
+                local Image_Click = Instance.new("ImageLabel")
+                local Image_Button = Instance.new("ImageLabel")
+
+                Item_Button.Name = "Item_Button"
+                Item_Button.Parent = data.ScrollTabView
+                Item_Button.AnchorPoint = Vector2.new(0.5, 0.5)
+                Item_Button.BackgroundColor3 = Color3.fromRGB(28, 0, 39)
+                Item_Button.BorderSizePixel = 0
+                Item_Button.Position = UDim2.new(0.490487695, 0, 0.446806997, 0)
+                Item_Button.Size = UDim2.new(0, 470, 0, 22)
+                Item_Button.AutoButtonColor = false
+                Item_Button.Font = Enum.Font.SourceSans
+                Item_Button.Text = buttonText .. ": N/A"
+                Item_Button.TextColor3 = Color3.fromRGB(203, 203, 203)
+                Item_Button.TextScaled = true
+                Item_Button.TextSize = 14.000
+                Item_Button.TextWrapped = true
+                
+                Corner_Button.CornerRadius = UDim.new(0.200000003, 0)
+                Corner_Button.Name = "Corner_Button"
+                Corner_Button.Parent = Item_Button
+                
+                Constraint_Button.Name = "Constraint_Button"
+                Constraint_Button.Parent = Item_Button
+                Constraint_Button.MaxTextSize = 14
+                
+                Image_Click.Name = "Image_Click"
+                Image_Click.Parent = Item_Button
+                Image_Click.AnchorPoint = Vector2.new(0.5, 0.5)
+                Image_Click.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                Image_Click.BackgroundTransparency = 1.000
+                Image_Click.BorderSizePixel = 0
+                Image_Click.Position = UDim2.new(0.970000029, 0, 0.524999976, 0)
+                Image_Click.Rotation = 180
+                Image_Click.Size = UDim2.new(0.0350000001, 0, 0.75, 0)
+                Image_Click.Image = "rbxassetid://278543076"
+                
+                Image_Button.Name = "Image_Button"
+                Image_Button.Parent = Item_Button
+                Image_Button.AnchorPoint = Vector2.new(0.5, 0.5)
+                Image_Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                Image_Button.BackgroundTransparency = 1.000
+                Image_Button.BorderSizePixel = 0
+                Image_Button.Position = UDim2.new(0.5, 0, 0.5, 0)
+                Image_Button.Size = UDim2.new(1, 0, 1, 0)
+                Image_Button.ZIndex = 0
+                Image_Button.Image = "rbxassetid://13120553044"
+                Image_Button.ImageColor3 = Color3.fromRGB(212, 0, 255)
+                Image_Button.ImageTransparency = 0.750
+                Image_Button.ScaleType = Enum.ScaleType.Crop
+
+                updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
+
+                local Scrolling_Drop = Instance.new("ScrollingFrame")
+                local ListLayout_Drop = Instance.new("UIListLayout")
+
+                Scrolling_Drop.Name = "Scrolling_Drop"
+                Scrolling_Drop.Parent = data.ScrollTabView
+                Scrolling_Drop.Active = true
+                Scrolling_Drop.AnchorPoint = Vector2.new(0.5, 0.5)
+                Scrolling_Drop.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                Scrolling_Drop.BackgroundTransparency = 1.000
+                Scrolling_Drop.BorderSizePixel = 0
+                Scrolling_Drop.ClipsDescendants = true
+                Scrolling_Drop.Position = UDim2.new(0.5, 0, 0.5, 0)
+                Scrolling_Drop.Size = UDim2.new(0, 470, 0, 0)
+                Scrolling_Drop.ScrollBarThickness = 2
+                Scrolling_Drop.ScrollBarImageColor3 = Color3.fromRGB(160, 0, 166)
+                
+                ListLayout_Drop.Name = "ListLayout_Drop"
+                ListLayout_Drop.Parent = Scrolling_Drop
+                ListLayout_Drop.SortOrder = Enum.SortOrder.LayoutOrder
+                ListLayout_Drop.Padding = UDim.new(0, 0)
+                ListLayout_Drop.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+                local toggled = false
+                local selected = nil
+
+                local function hideDrop()
+                    Scrolling_Drop:TweenSize(
+                        UDim2.fromOffset(470, 0),
+                        Enum.EasingDirection.Out,
+                        Enum.EasingStyle.Sine,
+                        .2,
+                        true,
+                        function()
+                            updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
+                        end
+                    )
+                end
+
+                local function showDrop()
+                    Scrolling_Drop:TweenSize(
+                        UDim2.fromOffset(470, ListLayout_Drop.AbsoluteContentSize.Y),
+                        Enum.EasingDirection.Out,
+                        Enum.EasingStyle.Sine,
+                        .2,
+                        true,
+                        function()
+                            updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y, 12.5)
+                        end
+                    )
+                end
+                
+                local function toggleDrop()
+                    toggled = not toggled
+
+                    if toggled then
+                        TweenService:Create(Image_Click, TweenInfo.new(.15), {
+                            Rotation = 0
+                        }):Play()
+                        showDrop()
+                    else
+                        TweenService:Create(Image_Click, TweenInfo.new(.15), {
+                            Rotation = 180
+                        }):Play()
+                        hideDrop()
+                    end
+                end
+
+                local function showColor(_item)
+                    for _, item in Scrolling_Drop:GetChildren() do
+                        if item:IsA("TextButton") then
+                            if item.Name == _item then
+                                item.BackgroundColor3 = Color3.fromRGB(143, 0, 200)
+                            else
+                                item.BackgroundColor3 = Color3.fromRGB(75, 0, 104)
+                            end
+                        end
+                    end
+                end
+
+                for _, item in _items do
+                    local DropItem_Button = Instance.new("TextButton")
+                    local Corner_Button = Instance.new("UICorner")
+                    local Image_Button = Instance.new("ImageLabel")
+                    local Constraint_Button = Instance.new("UITextSizeConstraint")
+
+                    DropItem_Button.Name = item
+                    DropItem_Button.Parent = Scrolling_Drop
+                    DropItem_Button.BackgroundColor3 = Color3.fromRGB(75, 0, 104)
+                    DropItem_Button.Size = UDim2.new(0, 226, 0, 21)
+                    DropItem_Button.Font = Enum.Font.SourceSans
+                    DropItem_Button.Text = item
+                    DropItem_Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    DropItem_Button.TextScaled = true
+                    DropItem_Button.TextSize = 14.000
+                    DropItem_Button.TextWrapped = true
+                    
+                    Corner_Button.CornerRadius = UDim.new(0.100000001, 0)
+                    Corner_Button.Name = "Corner_Button"
+                    Corner_Button.Parent = DropItem_Button
+                    
+                    Image_Button.Name = "Image_Button"
+                    Image_Button.Parent = DropItem_Button
+                    Image_Button.AnchorPoint = Vector2.new(0.5, 0.5)
+                    Image_Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    Image_Button.BackgroundTransparency = 1.000
+                    Image_Button.BorderSizePixel = 0
+                    Image_Button.Position = UDim2.new(0.5, 0, 0.5, 0)
+                    Image_Button.Size = UDim2.new(1, 0, 1, 0)
+                    Image_Button.ZIndex = 0
+                    Image_Button.Image = "rbxassetid://13120553044"
+                    Image_Button.ImageColor3 = Color3.fromRGB(212, 0, 255)
+                    Image_Button.ImageTransparency = 0.750
+                    Image_Button.ScaleType = Enum.ScaleType.Crop
+                    
+                    Constraint_Button.Name = "Constraint_Button"
+                    Constraint_Button.Parent = DropItem_Button
+                    Constraint_Button.MaxTextSize = 14
+
+                    DropItem_Button.MouseButton1Click:Connect(function()
+                        if selected == item then
+                            Item_Button.Text = buttonText .. ": N/A"
+                            selected = nil
+                            showColor("")
+                        else
+                            Item_Button.Text = buttonText .. ": " .. item
+                            selected = item
+                            showColor(item)
+                        end
+                        
+                        toggleDrop()
+                        pcall(_callback, selected)
+                    end)
+
+                    updateCanvas(Scrolling_Drop, ListLayout_Drop, Enum.ScrollingDirection.Y)
+                end
+
+                updateCanvas(Scrolling_Drop, ListLayout_Drop, Enum.ScrollingDirection.Y)
+                updateCanvas(data.ScrollTabView, data.ScrollTabView.ListLayout_TabView, Enum.ScrollingDirection.Y)
+
+                Item_Button.MouseButton1Click:Connect(toggleDrop)
+            end
+
+            function sectionFuncs:MultiDropdown(dropdownOptions)
+
+            end
+
+            function sectionFuncs:Toggle(toggleOptions)
+
             end
 
             function sectionFuncs:TextBox(textBoxOptions)
@@ -787,14 +1017,6 @@ function Rhythm_Library:_WindowCode()
             end
 
             function sectionFuncs:Slider(sliderOptions)
-
-            end
-
-            function sectionFuncs:Dropdown(dropdownOptions)
-
-            end
-
-            function sectionFuncs:Toggle(toggleOptions)
 
             end
 
@@ -821,6 +1043,8 @@ function Rhythm_Library:DestroyWindow()
     )
     task.wait(.25)
     self.UI:Destroy()
+    connection:Disconnect()
+    connection = nil
 end
 
 function Rhythm_Library:Toggle()
@@ -857,7 +1081,20 @@ function Rhythm_Library:ChangeTitle(title)
     self.Title.Text = title
 end
 
-UIS.InputEnded:Connect(function(input, gameProcessedEvent)
+function Rhythm_Library:ChangeKeybind(kb)
+    if typeof(kb) == "EnumItem" and Enum.KeyCode[kb.Name] then
+        getgenv().Rhythm_Library.Keybind = kb
+    elseif type(kb) == "string" and Enum.KeyCode[kb] then
+        getgenv().Rhythm_Library.Keybind = Enum.KeyCode[kb]
+    end
+end
+
+if getgenv().Rhythm_Library.Connection then
+    getgenv().Rhythm_Library.Connection:Disconnect()
+    getgenv().Rhythm_Library.Connection = nil
+end
+
+getgenv().Rhythm_Library.Connection = UIS.InputEnded:Connect(function(input, gameProcessedEvent)
     if gameProcessedEvent then return end
 
     if input.KeyCode == getgenv().Rhythm_Library.Keybind then
@@ -871,13 +1108,37 @@ local window = Rhythm_Library:Window("RHYTHMLIB | TESTING")
 
 local tab1 = window:Tab("Auto Farm")
 local s1_t1 = tab1:Section("Auto Equip")
+
 s1_t1:Label("Auto AFK Position: N/A")
 s1_t1:Button("Jump!", function()
     Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     print("Jumped!")
 end)
+s1_t1:Dropdown({
+    Name = "Some Dropdown",
+    Items = {
+        "eh",
+        "idk",
+        "another",
+        "why not another",
+        "even more",
+        "nothing's stopping me",
+        "i can keep going",
+        "infinite",
+        "endless possibilities",
+        "suffering",
+        "ok this is enough"
+    },
+    Callback = function(item)
+        print("Selected:", item)
+    end
+})
 
-local s1_t1 = tab1:Section("Auto Class Up")
+local s2_t1 = tab1:Section("Auto Class Up")
+s2_t1:Button("Jump!", function()
+    Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    print("Jumped!")
+end)
 
 local tab2 = window:Tab("Auto Time Trial")
 local tab3 = window:Tab("Auto Buy")
