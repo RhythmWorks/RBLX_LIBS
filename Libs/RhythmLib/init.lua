@@ -131,7 +131,7 @@ end
 
 local function newConnection()
     local num = 0
-    for _, _ in getgenv().Rhythm_Library.Connections do
+    for _, _ in pairs(getgenv().Rhythm_Library.Connections) do
         num = num + 1
     end
     return num + 1
@@ -951,7 +951,7 @@ function Rhythm_Library:_WindowCode()
                 end
 
                 local function showColor(_item)
-                    for _, item in Item_Drop:GetChildren() do
+                    for _, item in pairs(Item_Drop:GetChildren()) do
                         if item:IsA("TextButton") then
                             if item.Name == _item then
                                 item.BackgroundColor3 = Color3.fromRGB(143, 0, 200)
@@ -962,7 +962,7 @@ function Rhythm_Library:_WindowCode()
                     end
                 end
 
-                for _, item in _items do
+                for _, item in pairs(_items) do
                     local DropItem_Button = Instance.new("TextButton")
                     local Corner_Button = Instance.new("UICorner")
                     local Image_Button = Instance.new("ImageLabel")
@@ -1166,7 +1166,7 @@ function Rhythm_Library:_WindowCode()
                 end
 
                 local function showColors()
-                    for _, item in Item_Drop:GetChildren() do
+                    for _, item in pairs(Item_Drop:GetChildren()) do
                         if item:IsA("TextButton") then
                             if table.find(selected, item.Name) then
                                 item.BackgroundColor3 = Color3.fromRGB(143, 0, 200)
@@ -1185,14 +1185,14 @@ function Rhythm_Library:_WindowCode()
                         local clone = table.clone(selected)
                         clone[1] = nil
 
-                        for _, item in clone do
+                        for _, item in pairs(clone) do
                             str = str .. ", " .. item
                         end
                         Item_Button.Text = str
                     end
                 end
 
-                for _, item in _items do
+                for _, item in pairs(_items) do
                     local DropItem_Button = Instance.new("TextButton")
                     local Corner_Button = Instance.new("UICorner")
                     local Image_Button = Instance.new("ImageLabel")
@@ -1794,7 +1794,7 @@ function Rhythm_Library:DestroyWindow()
     self.UI:Destroy()
 
     if getgenv().Rhythm_Library and getgenv().Rhythm_Library.Connections then
-        for _, connection in getgenv().Rhythm_Library.Connections do
+        for _, connection in pairs(getgenv().Rhythm_Library.Connections) do
             if typeof(connection) == "RBXScriptConnection" then
                 connection:Disconnect()
             else
@@ -1864,7 +1864,7 @@ ProtectInstance(notificationUI)
 notificationUI.Parent = CoreGui
 
 if getgenv().Rhythm_Library and getgenv().Rhythm_Library.Connections then
-    for _, connection in getgenv().Rhythm_Library.Connections do
+    for _, connection in pairs(getgenv().Rhythm_Library.Connections) do
         if typeof(connection) == "RBXScriptConnection" then
             connection:Disconnect()
         else
