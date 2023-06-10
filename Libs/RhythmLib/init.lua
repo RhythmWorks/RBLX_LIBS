@@ -12,7 +12,6 @@ local Collection = game:GetService("CollectionService")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
 local _toggling = false
 local _dragging = false
