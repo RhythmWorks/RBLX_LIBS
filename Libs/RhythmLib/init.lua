@@ -14,7 +14,7 @@ local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 
 local _toggling = false
-local _dragging = false
+local _busy = false
 
 local notificationQueue = {}
 local assertions = {
@@ -30,7 +30,7 @@ local function dragify(Frame)
         Delta = input.Position - dragStart
         Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + Delta.X, startPos.Y.Scale, startPos.Y.Offset + Delta.Y)
         local tween = game:GetService("TweenService"):Create(Frame, TweenInfo.new(.25), {Position = Position})
-        if not _dragging then
+        if not _busy then
             tween:Play()
             tween.Completed:Wait()
         end
@@ -1724,6 +1724,8 @@ function Rhythm_Library:_WindowCode()
                 SliderCircle.Image = "rbxassetid://3570695787"
                 SliderCircle.ImageColor3 = Color3.fromRGB(100, 0, 150)
 
+                local dragging = false
+
                 local function move(input)
                     local pos, pos1 = UDim2.new(
                         math.clamp((input.Position.X - SlideFrame.AbsolutePosition.X) / SlideFrame.AbsoluteSize.X, 0, 1),
@@ -1745,18 +1747,20 @@ function Rhythm_Library:_WindowCode()
 
                 getgenv().Rhythm_Library.Connections[newConnection()] = SliderCircle.InputBegan:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        _dragging = true
+                        dragging = true
+                        _busy = true
                     end
                 end)
 
                 getgenv().Rhythm_Library.Connections[newConnection()] = SliderCircle.InputEnded:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        _dragging = false
+                        dragging = false
+                        _busy = false
                     end
                 end)
 
                 getgenv().Rhythm_Library.Connections[newConnection()] = UIS.InputChanged:Connect(function(input)
-                    if _dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                         move(input)
                     end
                 end)
